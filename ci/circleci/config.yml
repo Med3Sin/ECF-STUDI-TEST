@@ -1,0 +1,117 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.1.0
+  android: circleci/android@2.3.0
+  ios: circleci/ios@2.1.0
+
+jobs:
+  install-dependencies:
+    docker:
+      - image: cimg/node:18.10
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          override-ci-command: npm ci
+
+  test:
+    docker:
+      - image: cimg/node:18.10
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          override-ci-command: npm ci
+      - run:
+          name: Run Tests
+          command: npm test
+
+  build-android:
+    docker:
+      - image: cimg/android:2023.08
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          override-ci-command: npm ci
+      - android/create-avd:
+          target: google_apis
+          api: 33
+          arch: x86_64
+      - run:
+          name: Build Android App
+          command: |
+            cd android
+            ./gradlew assembleDebug
+            ./gradlew assembleRelease
+      - store_artifacts:
+          path: android/app/build/outputs/apk
+          destination: android-builds
+
+  build-ios:
+    macos:
+      xcode: 15.0.0
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          override-ci-command: npm ci
+      - ios/install-pods:
+          pod-install-command: pod install
+      - run:
+          name: Build iOS App
+          command: |
+            cd ios
+            xcodebuild -workspace YourMedia.xcworkspace -scheme YourMedia -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 14,OS=16.0' build
+      - store_artifacts:
+          path: ios/build
+          destination: ios-builds
+
+  deploy:
+    docker:
+      - image: cimg/node:18.10
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+          override-ci-command: npm ci
+      - run:
+          name: Deploy to App Store Connect
+          command: |
+            # Configuration pour le déploiement iOS
+            if [ "${CIRCLE_BRANCH}" = "main" ]; then
+              echo "Deploying to App Store Connect..."
+              # Ajouter ici les commandes de déploiement iOS
+            fi
+      - run:
+          name: Deploy to Google Play Store
+          command: |
+            # Configuration pour le déploiement Android
+            if [ "${CIRCLE_BRANCH}" = "main" ]; then
+              echo "Deploying to Google Play Store..."
+              # Ajouter ici les commandes de déploiement Android
+            fi
+
+workflows:
+  version: 2
+  build-test-deploy:
+    jobs:
+      - install-dependencies
+      - test:
+          requires:
+            - install-dependencies
+      - build-android:
+          requires:
+            - install-dependencies
+      - build-ios:
+          requires:
+            - install-dependencies
+      - deploy:
+          requires:
+            - test
+            - build-android
+            - build-ios
+          filters:
+            branches:
+              only: main 
