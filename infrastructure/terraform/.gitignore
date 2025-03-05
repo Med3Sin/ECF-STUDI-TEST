@@ -1,0 +1,35 @@
+# Fichiers de variables sensibles
+*.tfvars
+*.tfvars.json
+*.tfvars.json.backup
+
+# Fichiers de verrouillage
+.terraform.lock.hcl
+
+# Répertoires Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Fichiers de logs
+*.log
+
+# Fichiers de sauvegarde
+*.backup
+*~
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers d'environnement
+.env
+.env.*
+
+# Fichiers de secrets
+secrets/
+*.pem
+*.key 

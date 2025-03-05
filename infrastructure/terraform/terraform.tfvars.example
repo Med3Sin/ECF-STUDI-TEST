@@ -1,0 +1,14 @@
+# Configuration AWS
+aws_region = "eu-west-3"
+environment = "development"
+
+# Configuration réseau
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidr = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+availability_zone = "eu-west-3a"
+
+# Configuration de la base de données
+db_name = "yourmedia"
+db_username = "admin"
+db_password = "CHANGE_ME"  # À remplacer par un mot de passe sécurisé 

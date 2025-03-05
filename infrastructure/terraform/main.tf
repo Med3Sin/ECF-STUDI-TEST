@@ -2,13 +2,51 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 4.0"
     }
   }
 }
 
 provider "aws" {
-  region = "eu-west-3"  # Paris region
+  region = var.aws_region
+}
+
+module "networking" {
+  source = "./modules/networking"
+
+  environment           = var.environment
+  vpc_cidr            = var.vpc_cidr
+  public_subnet_cidr  = var.public_subnet_cidr
+  private_subnet_cidr = var.private_subnet_cidr
+  availability_zone   = var.availability_zone
+}
+
+module "compute" {
+  source = "./modules/compute"
+
+  environment        = var.environment
+  subnet_id         = module.networking.public_subnet_id
+  security_group_ids = [module.networking.ec2_security_group_id]
+  user_data         = file("${path.module}/user-data.sh")
+  secrets_arns      = [module.database.db_credentials_secret_arn]
+}
+
+module "database" {
+  source = "./modules/database"
+
+  environment        = var.environment
+  db_name           = var.db_name
+  db_username       = var.db_username
+  db_password       = var.db_password
+  security_group_ids = [module.networking.rds_security_group_id]
+  subnet_ids        = [module.networking.private_subnet_id]
+}
+
+module "storage" {
+  source = "./modules/storage"
+
+  environment   = var.environment
+  ec2_role_arn  = module.compute.iam_role_arn
 }
 
 # Create a secret for RDS credentials
